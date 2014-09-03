@@ -14,7 +14,7 @@ var engine = {
 		])
 		.then(function() {
 			 return Promise.all([
-					engine.dom.init(canvasId, resX, resY),
+					engine.renderer.init(canvasId, resX, resY),
 					engine.resources.init(),
 
 					engine.camera.init()
@@ -42,12 +42,7 @@ var engine = {
 	},
 
 	render: function() {
-		var ctx = engine.dom.ctx;
-
-		ctx.save();
-		ctx.fillStyle = "black";
-		ctx.fillRect(0, 0, engine.resolution.x, engine.resolution.y);
-		ctx.restore();
+		engine.renderer.clear();
 
 		for(var x = engine.camera.cam.getLeftMostTile(); x < engine.camera.cam.getRightMostTile() + 1; x++) {
 			for(var y = engine.camera.cam.getTopMostTile(); y < engine.camera.cam.getDownMostTile() + 1; y++) {
@@ -57,11 +52,9 @@ var engine = {
 
 				var index = engine.resources.map[x][y];
 
-				
-				var clip = engine.resources.mapSpritesheet.indexToPosition(index);
 				var screenPos = engine.camera.cam.toScreen({x: x, y: y});
 
-				ctx.drawImage(engine.resources.mapSpritesheet.img, clip.x, clip.y, engine.tileSize, engine.tileSize, screenPos.x, screenPos.y, engine.tileSize, engine.tileSize);
+				engine.renderer.drawTile(screenPos, index);
 			}
 		}
 	}
@@ -75,7 +68,7 @@ engine.camera = {
 	}
 };
 
-engine.dom = {
+engine.renderer = {
 	canvas: null,
 	ctx: null,
 
@@ -85,6 +78,19 @@ engine.dom = {
 
 		this.canvas.width = resX;
 		this.canvas.height = resY;
+	},
+
+	clear: function() {
+		this.ctx.save();
+		this.ctx.fillStyle = "black";
+		this.ctx.fillRect(0, 0, engine.resolution.x, engine.resolution.y);
+		this.ctx.restore();
+	},
+
+	drawTile: function(position, tileIndex) {
+		var clip = engine.resources.mapSpritesheet.indexToPosition(tileIndex);
+
+		this.ctx.drawImage(engine.resources.mapSpritesheet.img, clip.x, clip.y, engine.tileSize, engine.tileSize, position.x * engine.tileSize, position.y * engine.tileSize, engine.tileSize, engine.tileSize);
 	}
 };
 

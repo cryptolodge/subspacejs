@@ -41,11 +41,11 @@ engine.Camera.prototype.getDownMostTile = function() {
 };
 
 engine.Camera.prototype.xToScreen = function(x) {
-	return (x - this.getLeftMost()) * this.tileSize;
+	return (x - this.getLeftMost());
 };
 
 engine.Camera.prototype.yToScreen = function(y) {
-	return (y - this.getTopMost()) * this.tileSize;
+	return (y - this.getTopMost());
 };
 
 engine.Camera.prototype.toScreen = function(pos) {
