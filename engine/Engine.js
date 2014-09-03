@@ -17,6 +17,7 @@ var engine = {
 					engine.renderer.init(canvasId, resX, resY),
 					engine.resources.init(),
 
+					engine.input.init(),
 					engine.camera.init()
 			]);
 		})
@@ -28,17 +29,35 @@ var engine = {
 	loop: function() {
 		var lastTime = 0;
 
-		return function(time) {
+		return function cb(time) {
 			var dt = (time - lastTime) / 1000;
 			lastTime = time;
 
 			engine.update(dt);
 			engine.render();
+
+			requestAnimationFrame(cb);
 		}();
 	},
 
 	update: function(dt) {
+		var speed = 6;
 
+		if(engine.input.up) {
+			engine.camera.cam.position.y -= speed * dt;
+		}
+
+		if(engine.input.right) {
+			engine.camera.cam.position.x += speed * dt;
+		}
+
+		if(engine.input.down) {
+			engine.camera.cam.position.y += speed * dt;
+		}
+
+		if(engine.input.left) {
+			engine.camera.cam.position.x -= speed * dt;
+		}
 	},
 
 	render: function() {
@@ -57,6 +76,46 @@ var engine = {
 				engine.renderer.drawTile(screenPos, index);
 			}
 		}
+	}
+};
+
+engine.input = {
+	up: false,
+	right: false,
+	down: false,
+	left: false,
+
+	init: function() {
+		var self = this;
+
+		window.onkeydown = window.onkeyup = function(e) {
+			var val = null;
+			if(e.type === "keydown") {
+				val = true;
+			} else if(e.type === "keyup") {
+				val = false;
+			}
+
+			var input = null;
+			switch(e.keyCode) {
+			case 37:
+				input = "left";
+				break;
+			case 38:
+				input = "up";
+				break;
+			case 39:
+				input = "right";
+				break;
+			case 40:
+				input = "down";
+				break;
+			};
+
+			if(input !== null) {
+				self[input] = val;
+			}
+		};
 	}
 };
 
