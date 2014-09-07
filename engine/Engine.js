@@ -10,7 +10,8 @@ var engine = {
 		engine.resolution.y = resY;
 
 		Promise.all([
-			engine.resourceLoader.javascript("engine/Camera.js")
+			engine.resourceLoader.javascript("engine/Camera.js"),
+			engine.resourceLoader.javascript("engine/Player.js")
 		])
 		.then(function() {
 			 return Promise.all([
@@ -18,7 +19,8 @@ var engine = {
 					engine.resources.init(),
 
 					engine.input.init(),
-					engine.camera.init()
+					engine.camera.init(),
+					engine.players.init()
 			]);
 		})
 		.then(function() {
@@ -37,27 +39,32 @@ var engine = {
 			engine.render();
 
 			requestAnimationFrame(cb);
-		}();
-	},
+		};
+	}(),
 
 	update: function(dt) {
 		var speed = 6;
 
+		var player = engine.players.players[engine.players.id];
+
 		if(engine.input.up) {
-			engine.camera.cam.position.y -= speed * dt;
+			player.startEngine(player.ENGINE_STATE.FORWARD);
+		} else if(engine.input.down) {
+			player.startEngine(player.ENGINE_STATE.BACKWARD);
+		} else {
+			player.stopEngine();
 		}
 
 		if(engine.input.right) {
-			engine.camera.cam.position.x += speed * dt;
+			player.rotate(-dt * Math.PI);
+		} else if(engine.input.left) {
+			player.rotate(dt * Math.PI);
 		}
 
-		if(engine.input.down) {
-			engine.camera.cam.position.y += speed * dt;
-		}
+		player.update(dt);
 
-		if(engine.input.left) {
-			engine.camera.cam.position.x -= speed * dt;
-		}
+		engine.camera.cam.position.x = player.position_.e(1);
+		engine.camera.cam.position.y = player.position_.e(2);
 	},
 
 	render: function() {
@@ -76,6 +83,27 @@ var engine = {
 				engine.renderer.drawTile(screenPos, index);
 			}
 		}
+
+		var ctx = engine.renderer.ctx;
+		ctx.save();
+		ctx.translate(400, 300);
+		ctx.rotate(-engine.players.players[0].angle_ + Math.PI / 2);
+		ctx.fillStyle = "white";
+		ctx.beginPath();
+		ctx.lineTo(0, -30);
+		ctx.lineTo(-30, 30);
+		ctx.lineTo(30, 30);
+		ctx.fill();
+		ctx.restore();
+	}
+};
+
+engine.players = {
+	id: 0,
+	players: [],
+
+	init: function() {
+		this.players[this.id] = new engine.Player();
 	}
 };
 
@@ -114,6 +142,7 @@ engine.input = {
 
 			if(input !== null) {
 				self[input] = val;
+				return false;
 			}
 		};
 	}
@@ -149,7 +178,7 @@ engine.renderer = {
 	drawTile: function(position, tileIndex) {
 		var clip = engine.resources.mapSpritesheet.indexToPosition(tileIndex);
 
-		this.ctx.drawImage(engine.resources.mapSpritesheet.img, clip.x, clip.y, engine.tileSize, engine.tileSize, position.x * engine.tileSize, position.y * engine.tileSize, engine.tileSize, engine.tileSize);
+		this.ctx.drawImage(engine.resources.mapSpritesheet.img, clip.x, clip.y, engine.tileSize, engine.tileSize, Math.round(position.x * engine.tileSize), Math.round(position.y * engine.tileSize), engine.tileSize, engine.tileSize);
 	}
 };
 
