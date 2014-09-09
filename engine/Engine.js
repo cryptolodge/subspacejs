@@ -63,6 +63,28 @@ var engine = {
 
 		player.update(dt);
 
+		for(var x = Math.floor(player.position_.e(1)); x < Math.floor(player.position_.e(1) + 3); x++) {
+			for(var y = Math.floor(player.position_.e(2)); y < Math.floor(player.position_.e(2) + 3); y++) {
+				if(engine.resources.map[x] === undefined || engine.resources.map[x][y] === undefined) {
+					continue;
+				}
+
+				var normal = player.getCollisionNormal({x: x, y: y, width: 1, height: 1});
+
+				if(normal === null) {
+					continue;
+				}
+
+				player.position_ = player.prevPosition_;
+
+				var reflection = player.velocity_.subtract(
+						normal.multiply(2 * player.velocity_.dot(normal))
+				);
+
+				player.velocity_ = reflection.multiply(1/2);
+			}
+		}
+
 		engine.camera.cam.position.x = player.position_.e(1);
 		engine.camera.cam.position.y = player.position_.e(2);
 	},
@@ -86,14 +108,10 @@ var engine = {
 
 		var ctx = engine.renderer.ctx;
 		ctx.save();
-		ctx.translate(400, 300);
-		ctx.rotate(-engine.players.players[0].angle_ + Math.PI / 2);
-		ctx.fillStyle = "white";
-		ctx.beginPath();
-		ctx.lineTo(0, -30);
-		ctx.lineTo(-30, 30);
-		ctx.lineTo(30, 30);
-		ctx.fill();
+		ctx.translate(416, 316);
+		ctx.rotate(-engine.players.players[0].angle_);
+		ctx.translate(-16, -16);
+		ctx.drawImage(engine.resources.ships.warbird, 0, 0);
 		ctx.restore();
 	}
 };
@@ -197,11 +215,14 @@ engine.resources = {
 		}
 	},
 
+	ships: {},
+
 	init: function() {
 		var self = this;
 
 		return Promise.all([
-				engine.resourceLoader.image("resources/spritesheets/tiles.bmp"),
+				engine.resourceLoader.image("resources/spritesheets/tiles.bmp", "tiles"),
+				engine.resourceLoader.image("resources/warbird.png", "warbird"),
 				engine.resourceLoader.map("resources/maps/map.json")
 		])
 		.then(function(resources) {
@@ -209,7 +230,11 @@ engine.resources = {
 				if(resources[i].type === "map") {
 					self.map = resources[i].data;
 				} else if(resources[i].type === "img") {
-					self.mapSpritesheet.img = resources[i].data;
+					if(resources[i].name === "tiles") {
+						self.mapSpritesheet.img = resources[i].data;
+					} else if(resources[i].name === "warbird") {
+						self.ships[resources[i].name] = resources[i].data;
+					}
 				}
 			}
 		});
@@ -217,11 +242,11 @@ engine.resources = {
 };
 
 engine.resourceLoader = {
-	image: function(url) {
+	image: function(url, name) {
 		var pr = new Promise(function(resolve, reject) {
 			var img = new Image();
 			img.onload = function() {
-				resolve({type: "img", data: img});
+				resolve({type: "img", data: img, name: name});
 			};
 			img.src = url;
 		});
